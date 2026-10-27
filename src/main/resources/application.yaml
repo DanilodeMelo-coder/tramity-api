@@ -10,3 +10,5 @@ spring:
       ddl-auto: validate
     show-sql: true
     open-in-view: false
+  server:
+    port: ${PORT:8080}
