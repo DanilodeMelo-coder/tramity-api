@@ -12,3 +12,8 @@ spring:
     open-in-view: false
   server:
     port: ${PORT:8080}
+  tramity:
+    jwt:
+      secret: TdZu2x-z0jISAKlt6D_RD8cPhwrI9bMjkuLrhIoJko2iYRiPWD-qtvuQslNcz7Vv
+      expiracao-horas: 8
+
