@@ -23,14 +23,14 @@ public class Convite {
     @Column(length = 36)
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false) // esse fetch lazy adia a consulta ao banco, pra melhor desempenho
+    @ManyToOne(fetch = FetchType.LAZY, optional = false) // esse fetch lazy adia a consulta ao banco, para melhor desempenho
     @JoinColumn(name = "id_processo", nullable = false)
     private Processo processo;
 
     @Column(name = "email", nullable = false, length = 150)
     private String email;
 
-    @Column(name = "codigo", nullable = false, length = 6)
+    @Column(name = "codigo", nullable = false, length = 6, unique = true) // tava sem unique
     private String codigo;
 
     @Column(name = "data_expiracao", nullable = false)
