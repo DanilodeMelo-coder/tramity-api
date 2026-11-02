@@ -10,6 +10,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/processos")
 public class ProcessoController {
@@ -25,5 +27,10 @@ public class ProcessoController {
     public ProcessoDetalheResponse criar(@RequestBody @Valid CriarProcessoRequest dados,
                                          @AuthenticationPrincipal Jwt jwt) {
         return processoService.criar(dados, UsuarioLogado.de(jwt));
+    }
+
+    @GetMapping("/{id}")
+    public ProcessoDetalheResponse detalhar(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        return processoService.detalhar(id, UsuarioLogado.de(jwt));
     }
 }

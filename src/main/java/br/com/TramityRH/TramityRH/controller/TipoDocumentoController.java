@@ -1,7 +1,10 @@
 package br.com.TramityRH.TramityRH.controller;
 
 import br.com.TramityRH.TramityRH.model.TipoDocumento;
+import br.com.TramityRH.TramityRH.security.UsuarioLogado;
 import br.com.TramityRH.TramityRH.service.TipoDocumentoService;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -23,4 +26,5 @@ public class TipoDocumentoController {
 
         return service.listarTodosDocumentos();
     }
+
 }
