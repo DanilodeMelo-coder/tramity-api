@@ -1,9 +1,11 @@
 package br.com.TramityRH.TramityRH.model;
 
+import br.com.TramityRH.TramityRH.model.Enums.TipoProcesso;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -19,6 +21,7 @@ import java.util.UUID;
 public class Processo {
 
     @Id
+    @GeneratedValue
     @JdbcTypeCode(SqlTypes.CHAR)
     @Column(length = 36)
     private UUID id;
@@ -35,13 +38,16 @@ public class Processo {
     @JoinColumn(name = "id_colaborador", nullable = true)
     private Colaborador colaborador;
 
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
     @Column(name = "tipo", nullable = false, length = 20)
-    private String tipo;
+    private TipoProcesso tipo;
 
-    @Column(name = "data_criacao", nullable = false)
+    @CreationTimestamp
+    @Column(name = "data_criacao", nullable = false, updatable = false)
     private LocalDateTime dataCriacao;
 
-    @Column(name = "data_conclusao", nullable = false)
+    @Column(name = "data_conclusao", nullable = true)
     private LocalDateTime dataConclusao;
 
 }
