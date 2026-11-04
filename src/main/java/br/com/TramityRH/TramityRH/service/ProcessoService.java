@@ -23,6 +23,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class ProcessoService {
@@ -111,5 +112,16 @@ public class ProcessoService {
         return new ProcessoDetalheResponse(processo.getId(), processo.getTipo(), status,
                 colaborador, aprovados, documentos.size(), itens);
     }
+
+    @Transactional
+    public ProcessoDetalheResponse detalhar(UUID id, UsuarioLogado usuario) {
+        Processo processo = (usuario.isRh()
+        ? processoRepository.findByIdAndEmpresaId(id, usuario.idEmpresa())
+        : processoRepository.findByIdAndColaboradorId(id, usuario.id())).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Processo não encontrado"));
+
+        List<DocumentoProcesso> documentos = documentoRepository.listarComTipo(processo.getId());
+        return montarDetalhe(processo, documentos);
+    }
+
 }
 
