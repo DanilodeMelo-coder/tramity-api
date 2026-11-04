@@ -15,4 +15,7 @@ public interface DocumentoProcessoRepository extends JpaRepository <DocumentoPro
 
     @Query("SELECT d from DocumentoProcesso d JOIN FETCH d.tipoDocumento WHERE d.processo.id = :processoId")
     List<DocumentoProcesso> listarComTipo (@Param("processoId") UUID processoId);
+
+    @Query("SELECT d FROM DocumentoProcesso d WHERE d.processo.colaborador.id = :colaboradorId")
+    List<DocumentoProcesso> listarPorColaborador(@Param("colaboradorId") UUID colaboradorId);
 }

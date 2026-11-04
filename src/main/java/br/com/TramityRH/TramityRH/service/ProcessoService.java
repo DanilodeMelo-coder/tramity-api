@@ -1,9 +1,6 @@
 package br.com.TramityRH.TramityRH.service;
 
-import br.com.TramityRH.TramityRH.dto.CriarProcessoRequest;
-import br.com.TramityRH.TramityRH.dto.DocumentoResponse;
-import br.com.TramityRH.TramityRH.dto.DocumentoSolicitadoRequest;
-import br.com.TramityRH.TramityRH.dto.ProcessoDetalheResponse;
+import br.com.TramityRH.TramityRH.dto.*;
 import br.com.TramityRH.TramityRH.model.DocumentoProcesso;
 import br.com.TramityRH.TramityRH.model.Enums.DirecaoDocumento;
 import br.com.TramityRH.TramityRH.model.Enums.StatusDocumento;
@@ -23,7 +20,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class ProcessoService {
@@ -121,6 +120,32 @@ public class ProcessoService {
 
         List<DocumentoProcesso> documentos = documentoRepository.listarComTipo(processo.getId());
         return montarDetalhe(processo, documentos);
+    }
+
+    @Transactional
+    public List<MeuProcessoResponse> listarMeus(UsuarioLogado usuario) {
+        if (usuario.isRh()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Rota exclusiva do colaborador");
+        }
+
+        List<Processo> processos = processoRepository.listarPorColaborador(usuario.id());
+        Map<UUID, List<DocumentoProcesso>> docsPorProcesso =
+                documentoRepository.listarPorColaborador(usuario.id()).stream()
+                        .collect(Collectors.groupingBy(d -> d.getProcesso().getId()));
+
+        return processos.stream().map(p -> {
+            List<DocumentoProcesso> docs = docsPorProcesso.getOrDefault(p.getId(), List.of());
+            int aprovados = (int) docs.stream()
+                    .filter(d -> d.getStatus() == StatusDocumento.APROVADO || d.getStatus() == StatusDocumento.ACEITO)
+                    .count();
+            int pendentes = (int) docs.stream()
+                    .filter(d -> d.getDirecao() == DirecaoDocumento.COLABORADOR_ENVIA)
+                    .filter(d -> d.getStatus() == StatusDocumento.PENDENTE || d.getStatus() == StatusDocumento.RECUSADO)
+                    .count();
+            String status = p.getDataConclusao() == null ? "EM_ANDAMENTO" : "CONCLUIDO";
+            return new MeuProcessoResponse(p.getId(), p.getTipo(), status,
+                    p.getEmpresa().getRazaoSocial(), aprovados, docs.size(), pendentes);
+        }).toList();
     }
 
 }
