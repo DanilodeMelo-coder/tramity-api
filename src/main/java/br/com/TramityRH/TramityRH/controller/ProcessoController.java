@@ -2,6 +2,7 @@ package br.com.TramityRH.TramityRH.controller;
 
 import br.com.TramityRH.TramityRH.dto.CriarProcessoRequest;
 import br.com.TramityRH.TramityRH.dto.ProcessoDetalheResponse;
+import br.com.TramityRH.TramityRH.dto.ProcessoResumoResponse;
 import br.com.TramityRH.TramityRH.security.UsuarioLogado;
 import br.com.TramityRH.TramityRH.service.ProcessoService;
 import jakarta.validation.Valid;
@@ -10,6 +11,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -32,5 +34,11 @@ public class ProcessoController {
     @GetMapping("/{id}")
     public ProcessoDetalheResponse detalhar(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
         return processoService.detalhar(id, UsuarioLogado.de(jwt));
+    }
+
+    @GetMapping
+    public List<ProcessoResumoResponse> listar(@RequestParam(required = false) String status,
+                                               @AuthenticationPrincipal Jwt jwt) {
+        return processoService.listar(status, UsuarioLogado.de(jwt));
     }
 }

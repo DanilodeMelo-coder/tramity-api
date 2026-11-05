@@ -7,5 +7,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface UsuarioRhEmpresaRepository extends JpaRepository <UsuarioRhEmpresa, UUID> {
-    Optional<UsuarioRhEmpresa> findByEmail(String email); // ← login do RH busca por email, JpaRepository não vem com isso pronto
+    Optional<UsuarioRhEmpresa> findByEmail(String email);
+    boolean existsByEmail(String email);
 }

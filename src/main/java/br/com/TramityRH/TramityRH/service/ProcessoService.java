@@ -1,28 +1,21 @@
 package br.com.TramityRH.TramityRH.service;
 
-import br.com.TramityRH.TramityRH.dto.CriarProcessoRequest;
-import br.com.TramityRH.TramityRH.dto.DocumentoResponse;
-import br.com.TramityRH.TramityRH.dto.DocumentoSolicitadoRequest;
-import br.com.TramityRH.TramityRH.dto.ProcessoDetalheResponse;
-import br.com.TramityRH.TramityRH.model.DocumentoProcesso;
+import br.com.TramityRH.TramityRH.dto.*;
+import br.com.TramityRH.TramityRH.model.*;
 import br.com.TramityRH.TramityRH.model.Enums.DirecaoDocumento;
 import br.com.TramityRH.TramityRH.model.Enums.StatusDocumento;
 import br.com.TramityRH.TramityRH.model.Enums.TipoProcesso;
-import br.com.TramityRH.TramityRH.model.Processo;
-import br.com.TramityRH.TramityRH.model.TipoDocumento;
-import br.com.TramityRH.TramityRH.model.UsuarioRhEmpresa;
-import br.com.TramityRH.TramityRH.repository.DocumentoProcessoRepository;
-import br.com.TramityRH.TramityRH.repository.ProcessoRepository;
-import br.com.TramityRH.TramityRH.repository.TipoDocumentoRepository;
-import br.com.TramityRH.TramityRH.repository.UsuarioRhEmpresaRepository;
+import br.com.TramityRH.TramityRH.repository.*;
 import br.com.TramityRH.TramityRH.security.UsuarioLogado;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class ProcessoService {
@@ -30,15 +23,21 @@ public class ProcessoService {
     private final DocumentoProcessoRepository documentoRepository;
     private final TipoDocumentoRepository tipoDocumentoRepository;
     private final UsuarioRhEmpresaRepository usuarioRhRepository;
+    private final EnvioRepository envioRepository;
+    private final ConviteRepository conviteRepository;
 
     public ProcessoService(ProcessoRepository processoRepository,
                            DocumentoProcessoRepository documentoRepository,
                            TipoDocumentoRepository tipoDocumentoRepository,
-                           UsuarioRhEmpresaRepository usuarioRhRepository) {
+                           UsuarioRhEmpresaRepository usuarioRhRepository,
+                           EnvioRepository envioRepository,
+                           ConviteRepository conviteRepository) {
         this.processoRepository = processoRepository;
         this.documentoRepository = documentoRepository;
         this.tipoDocumentoRepository = tipoDocumentoRepository;
         this.usuarioRhRepository = usuarioRhRepository;
+        this.envioRepository = envioRepository;
+        this.conviteRepository = conviteRepository;
     }
 
     @Transactional
@@ -55,6 +54,7 @@ public class ProcessoService {
                         "Na admissão, todos os documentos são enviados pelo colaborador");
             }
         }
+
 
         // 3. O RH logado, para saber a empresa
         UsuarioRhEmpresa rh = usuarioRhRepository.findById(usuario.id())
@@ -88,17 +88,84 @@ public class ProcessoService {
         return montarDetalhe(processo, documentos);
     }
 
+    @Transactional(readOnly = true)
+    public ProcessoDetalheResponse detalhar(UUID id, UsuarioLogado usuario) {
+        Processo processo = processoRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Processo não encontrado"));
+
+        verificarAcesso(processo, usuario);
+
+        List<DocumentoProcesso> documentos = documentoRepository.findByProcessoId(id);
+        return montarDetalhe(processo, documentos);
+    }
+
+    private void verificarAcesso(Processo processo, UsuarioLogado usuario) {
+        boolean permitido;
+        if (usuario.isRh()) {
+            permitido = processo.getEmpresa().getId().equals(usuario.idEmpresa());
+        } else {
+            permitido = processo.getColaborador() != null
+                    && processo.getColaborador().getId().equals(usuario.id());
+        }
+
+        if (!permitido) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Sem acesso a este processo");
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProcessoResumoResponse> listar(String status, UsuarioLogado usuario) {
+        if (!usuario.isRh()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Apenas o RH pode listar processos");
+        }
+
+        List<Processo> processos = processoRepository.findByEmpresaIdOrderByDataCriacaoDesc(usuario.idEmpresa());
+
+        return processos.stream()
+                .filter(p -> status == null || status.equals(statusDe(p)))
+                .map(p -> montarResumo(p))
+                .toList();
+    }
+
+    private String statusDe(Processo processo) {
+        return (processo.getDataConclusao() == null) ? "EM_ANDAMENTO" : "CONCLUIDO";
+    }
+
+    private ProcessoResumoResponse montarResumo(Processo processo) {
+        List<DocumentoProcesso> documentos = documentoRepository.findByProcessoId(processo.getId());
+
+        int aprovados = (int) documentos.stream()
+                .filter(d -> d.getStatus() == StatusDocumento.APROVADO || d.getStatus() == StatusDocumento.ACEITO)
+                .count();
+
+        int aguardando = (int) documentos.stream()
+                .filter(d -> d.getStatus() == StatusDocumento.EM_ANALISE)
+                .count();
+
+        String nomeColaborador = (processo.getColaborador() == null) ? null : processo.getColaborador().getNome();
+
+        String emailConvite = conviteRepository.findFirstByProcessoIdOrderByDataExpiracaoDesc(processo.getId())
+                .map(c -> c.getEmail())
+                .orElse(null);
+
+        return new ProcessoResumoResponse(processo.getId(), processo.getTipo(), nomeColaborador, emailConvite,
+                aprovados, documentos.size(), aguardando, processo.getDataCriacao(), processo.getDataConclusao());
+    }
+
     private ProcessoDetalheResponse montarDetalhe(Processo processo, List<DocumentoProcesso> documentos) {
         List<DocumentoResponse> itens = documentos.stream()
-                .map(d -> new DocumentoResponse(
-                        d.getId(),
-                        d.getTipoDocumento().getNome(),
-                        d.getDescricao(),
-                        d.getDirecao(),
-                        d.getStatus(),
-                        null,
-                        null,
-                        d.getAceitoEm()))
+                .map(d -> {
+                    Optional<Envio> ultimo = envioRepository.findFirstByDocumentoProcessoIdOrderByEnviadoEmDesc(d.getId());
+                    return new DocumentoResponse(
+                            d.getId(),
+                            d.getTipoDocumento().getNome(),
+                            d.getDescricao(),
+                            d.getDirecao(),
+                            d.getStatus(),
+                            ultimo.map(e -> e.getMotivoRecusa()).orElse(null),
+                            ultimo.map(e -> e.getId()).orElse(null),
+                            d.getAceitoEm());
+                })
                 .toList();
 
         int aprovados = (int) documentos.stream()

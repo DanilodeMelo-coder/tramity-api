@@ -10,4 +10,5 @@ import java.util.UUID;
 public interface ProcessoRepository extends JpaRepository <Processo, UUID> {
     List<Processo> findByEmpresaId (UUID empresaId); // ← lista do rh, processos da empresa dele
     Optional<Processo> findByIdAndEmpresaId (UUID id, UUID empresaId); // ← essa bosta garante que a busca seja de um processo da empresa do usuario logado
+    List<Processo> findByEmpresaIdOrderByDataCriacaoDesc(UUID idEmpresa);
 }
