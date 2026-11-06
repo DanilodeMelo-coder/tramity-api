@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 public class Convite {
 
     @Id
+    @GeneratedValue
     @JdbcTypeCode(SqlTypes.CHAR)
     @Column(length = 36)
     private UUID id;
@@ -36,7 +37,7 @@ public class Convite {
     @Column(name = "data_expiracao", nullable = false)
     private LocalDateTime dataExpiracao;
 
-    @Column(name = "usado_em", nullable = false)
+    @Column(name = "usado_em")
     private LocalDateTime usadoEm;
 
 }

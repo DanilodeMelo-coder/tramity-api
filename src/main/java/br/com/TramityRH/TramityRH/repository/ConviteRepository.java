@@ -9,4 +9,5 @@ import java.util.UUID;
 public interface ConviteRepository extends JpaRepository <Convite, UUID> {
     Optional<Convite> findByCodigo (String codigo);
     Optional<Convite> findFirstByProcessoIdOrderByDataExpiracaoDesc(UUID idProcesso);
+    boolean existsByCodigo(String codigo);
 }
