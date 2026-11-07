@@ -9,6 +9,6 @@ import java.util.UUID;
 
 public interface EnvioRepository extends JpaRepository <Envio, UUID> {
     Optional<Envio> findByIdAndDocumentoProcessoId (UUID id, UUID documentoProcessoId);
-
     Optional<Envio> findFirstByDocumentoProcessoIdOrderByEnviadoEmDesc(UUID idDocumento);
+    Optional<Envio> findFirstByDocumentoProcessoIdAndResultadoIsNullOrderByEnviadoEmDesc(UUID idDocumento);
 }
