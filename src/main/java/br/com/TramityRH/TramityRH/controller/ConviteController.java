@@ -1,5 +1,7 @@
 package br.com.TramityRH.TramityRH.controller;
 
+import br.com.TramityRH.TramityRH.dto.AceitarConviteRequest;
+import br.com.TramityRH.TramityRH.dto.AceitarConviteResponse;
 import br.com.TramityRH.TramityRH.dto.ConviteRequest;
 import br.com.TramityRH.TramityRH.dto.ConviteResponse;
 import br.com.TramityRH.TramityRH.security.UsuarioLogado;
@@ -27,5 +29,11 @@ public class ConviteController {
                                  @RequestBody @Valid ConviteRequest dados,
                                  @AuthenticationPrincipal Jwt jwt) {
         return conviteService.criar(id, dados, UsuarioLogado.de(jwt));
+    }
+
+    @PostMapping("/convites/aceitar")
+    public AceitarConviteResponse aceitar(@RequestBody @Valid AceitarConviteRequest dados,
+                                          @AuthenticationPrincipal Jwt jwt) {
+        return conviteService.aceitar(dados, UsuarioLogado.de(jwt));
     }
 }
