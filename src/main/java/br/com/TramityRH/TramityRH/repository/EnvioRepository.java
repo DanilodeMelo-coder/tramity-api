@@ -11,4 +11,6 @@ public interface EnvioRepository extends JpaRepository <Envio, UUID> {
     Optional<Envio> findByIdAndDocumentoProcessoId (UUID id, UUID documentoProcessoId);
     Optional<Envio> findFirstByDocumentoProcessoIdOrderByEnviadoEmDesc(UUID idDocumento);
     Optional<Envio> findFirstByDocumentoProcessoIdAndResultadoIsNullOrderByEnviadoEmDesc(UUID idDocumento);
+    Optional<Envio> findByIdAndDocumentoProcessoProcessoEmpresaId(UUID id, UUID idEmpresa);
+    Optional<Envio> findByIdAndDocumentoProcessoProcessoColaboradorId(UUID id, UUID idColaborador);
 }

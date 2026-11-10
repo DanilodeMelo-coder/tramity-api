@@ -3,6 +3,8 @@ package br.com.TramityRH.TramityRH.service;
 import br.com.TramityRH.TramityRH.model.Colaborador;
 import br.com.TramityRH.TramityRH.model.Processo;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -66,6 +68,16 @@ public class ArmazenamentoService {
 
         // 5. Devolve o caminho relativo, que vai para a coluna arquivo_url
         return raiz.relativize(destino).toString();
+    }
+
+    public Resource carregar(String caminhoRelativo) {
+        Path arquivo = raiz.resolve(caminhoRelativo).normalize();
+
+        if (!arquivo.startsWith(raiz) || !Files.exists(arquivo)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Arquivo não encontrado");
+        }
+
+        return new FileSystemResource(arquivo);
     }
 
     private String simplificar(String texto) {

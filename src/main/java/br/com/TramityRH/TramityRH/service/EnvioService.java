@@ -9,12 +9,14 @@ import br.com.TramityRH.TramityRH.model.Processo;
 import br.com.TramityRH.TramityRH.repository.DocumentoProcessoRepository;
 import br.com.TramityRH.TramityRH.repository.EnvioRepository;
 import br.com.TramityRH.TramityRH.security.UsuarioLogado;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -76,5 +78,17 @@ public class EnvioService {
         // AUDITORIA: DOCUMENTO_ENVIADO
 
         return new EnvioResponse(envio.getId(), documento.getStatus());
+    }
+
+    @Transactional(readOnly = true)
+    public Resource baixar(UUID idEnvio, UsuarioLogado usuario) {
+        Optional<Envio> encontrado = usuario.isRh()
+                ? envioRepository.findByIdAndDocumentoProcessoProcessoEmpresaId(idEnvio, usuario.idEmpresa())
+                : envioRepository.findByIdAndDocumentoProcessoProcessoColaboradorId(idEnvio, usuario.id());
+
+        Envio envio = encontrado
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Arquivo não encontrado"));
+
+        return armazenamentoService.carregar(envio.getArquivoUrl());
     }
 }
