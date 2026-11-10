@@ -1,5 +1,6 @@
 package br.com.TramityRH.TramityRH.controller;
 
+import br.com.TramityRH.TramityRH.dto.ConcluirProcessoRequest;
 import br.com.TramityRH.TramityRH.dto.CriarProcessoRequest;
 import br.com.TramityRH.TramityRH.dto.ProcessoDetalheResponse;
 import br.com.TramityRH.TramityRH.security.UsuarioLogado;
@@ -32,5 +33,13 @@ public class ProcessoController {
     @GetMapping("/{id}")
     public ProcessoDetalheResponse detalhar(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
         return processoService.detalhar(id, UsuarioLogado.de(jwt));
+    }
+
+    @PostMapping("/{id}/concluir")
+    public ProcessoDetalheResponse concluir(@PathVariable UUID id,
+                                            @RequestBody(required = false) ConcluirProcessoRequest dados,
+                                            @AuthenticationPrincipal Jwt jwt) {
+        boolean confirmar = dados != null && dados.confirmarPendencias();
+        return processoService.concluir(id, confirmar, UsuarioLogado.de(jwt));
     }
 }

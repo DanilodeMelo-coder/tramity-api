@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -116,6 +117,45 @@ public class ProcessoService {
         : processoRepository.findByIdAndColaboradorId(id, usuario.id())).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Processo não encontrado"));
 
         List<DocumentoProcesso> documentos = documentoRepository.listarComTipo(processo.getId());
+        return montarDetalhe(processo, documentos);
+    }
+
+    @Transactional
+    public ProcessoDetalheResponse concluir(UUID id, boolean confirmarPendencias, UsuarioLogado usuario) {
+        // 1. Só o RH (RN15)
+        if (!usuario.isRh()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Apenas o RH pode concluir processos");
+        }
+
+        // 2. O processo, se for da empresa do RH
+        Processo processo = processoRepository.findByIdAndEmpresaId(id, usuario.idEmpresa())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Processo não encontrado"));
+
+        // 3. Já concluído?
+        if (processo.getDataConclusao() != null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Este processo já foi concluído");
+        }
+
+        // 4. Quais documentos ainda não foram aprovados nem aceitos?
+        List<DocumentoProcesso> documentos = documentoRepository.listarComTipo(id);
+        List<String> pendentes = documentos.stream()
+                .filter(d -> d.getStatus() != StatusDocumento.APROVADO && d.getStatus() != StatusDocumento.ACEITO)
+                .map(d -> d.getTipoDocumento().getNome())
+                .toList();
+
+        // 5. Com pendências, só conclui se o RH confirmar
+        if (!pendentes.isEmpty() && !confirmarPendencias) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Há documentos pendentes: " + String.join(", ", pendentes)
+                            + ". Confirme para concluir mesmo assim.");
+        }
+
+        // 6. Conclui
+        processo.setDataConclusao(LocalDateTime.now());
+        processoRepository.save(processo);
+
+        // AUDITORIA: PROCESSO_CONCLUIDO (se houver pendências, registrar quais no detalhe, pela RN15)
+
         return montarDetalhe(processo, documentos);
     }
 
