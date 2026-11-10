@@ -1,11 +1,9 @@
 package br.com.TramityRH.TramityRH.controller;
 
 
-import br.com.TramityRH.TramityRH.dto.CadastroRequest;
-import br.com.TramityRH.TramityRH.dto.CadastroResponse;
-import br.com.TramityRH.TramityRH.dto.LoginRequest;
-import br.com.TramityRH.TramityRH.dto.LoginResponse;
+import br.com.TramityRH.TramityRH.dto.*;
 import br.com.TramityRH.TramityRH.service.AuthService;
+import br.com.TramityRH.TramityRH.service.RecuperacaoSenhaService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -15,10 +13,13 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final RecuperacaoSenhaService recuperacaoSenhaService;
 
 
-    public AuthController(AuthService authService){
+    public AuthController(AuthService authService,
+                          RecuperacaoSenhaService recuperacaoSenhaService){
         this.authService = authService;
+        this.recuperacaoSenhaService = recuperacaoSenhaService;
     }
 
     @PostMapping("/login")
@@ -30,6 +31,11 @@ public class AuthController {
     @ResponseStatus(HttpStatus.CREATED)
     public CadastroResponse cadastrar(@RequestBody @Valid CadastroRequest dados){
         return authService.cadastrar(dados);
+    }
+
+    @PostMapping("/recuperar-senha")
+    public MensagemResponse recuperarSenha(@RequestBody @Valid RecuperarSenhaRequest dados) {
+        return recuperacaoSenhaService.solicitar(dados);
     }
 }
 
