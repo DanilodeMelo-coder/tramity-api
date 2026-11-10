@@ -10,6 +10,10 @@ spring:
       ddl-auto: validate
     show-sql: true
     open-in-view: false
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
 
 
 server:
@@ -19,4 +23,6 @@ tramity:
   jwt:
     secret: ${JWT_SECRET}
     expiracao-horas: 8
+  arquivos:
+    diretorio: ${ARQUIVOS_DIR:arquivos}
 

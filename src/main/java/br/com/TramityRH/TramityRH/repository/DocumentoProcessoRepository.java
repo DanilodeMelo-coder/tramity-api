@@ -12,6 +12,7 @@ import java.util.UUID;
 public interface DocumentoProcessoRepository extends JpaRepository <DocumentoProcesso, UUID> {
     List<DocumentoProcesso> findByProcessoId (UUID processoId);
     Optional<DocumentoProcesso> findByIdAndProcessoId (UUID id, UUID processoId); // um findById "seco" pode devolver o documento de qualquer processo, por isso e melhor buscar tanto pelo id quanto pelo processo
+    Optional<DocumentoProcesso> findByIdAndProcessoColaboradorId(UUID id, UUID idColaborador);
 
     @Query("SELECT d from DocumentoProcesso d JOIN FETCH d.tipoDocumento WHERE d.processo.id = :processoId")
     List<DocumentoProcesso> listarComTipo (@Param("processoId") UUID processoId);

@@ -8,6 +8,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestControllerAdvice
@@ -35,5 +36,10 @@ public class TratadorDeErros {
     public ResponseEntity<ErroResponse> tratarParametroInvalido(MethodArgumentTypeMismatchException e) {
         return ResponseEntity.badRequest()
                 .body(new ErroResponse("Valor inválido para " + e.getName()));
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErroResponse> tratarArquivoGrande(MaxUploadSizeExceededException e) {
+        return ResponseEntity.badRequest().body(new ErroResponse("O arquivo deve ter até 5 MB"));
     }
 }
