@@ -1,27 +1,18 @@
 package br.com.TramityRH.TramityRH.service;
 
 import br.com.TramityRH.TramityRH.dto.*;
-import br.com.TramityRH.TramityRH.model.DocumentoProcesso;
+import br.com.TramityRH.TramityRH.model.*;
 import br.com.TramityRH.TramityRH.model.Enums.DirecaoDocumento;
 import br.com.TramityRH.TramityRH.model.Enums.StatusDocumento;
 import br.com.TramityRH.TramityRH.model.Enums.TipoProcesso;
-import br.com.TramityRH.TramityRH.model.Processo;
-import br.com.TramityRH.TramityRH.model.TipoDocumento;
-import br.com.TramityRH.TramityRH.model.UsuarioRhEmpresa;
-import br.com.TramityRH.TramityRH.repository.DocumentoProcessoRepository;
-import br.com.TramityRH.TramityRH.repository.ProcessoRepository;
-import br.com.TramityRH.TramityRH.repository.TipoDocumentoRepository;
-import br.com.TramityRH.TramityRH.repository.UsuarioRhEmpresaRepository;
+import br.com.TramityRH.TramityRH.repository.*;
 import br.com.TramityRH.TramityRH.security.UsuarioLogado;
 import jakarta.transaction.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,15 +21,18 @@ public class ProcessoService {
     private final DocumentoProcessoRepository documentoRepository;
     private final TipoDocumentoRepository tipoDocumentoRepository;
     private final UsuarioRhEmpresaRepository usuarioRhRepository;
+    private final EnvioRepository envioRepository;
 
     public ProcessoService(ProcessoRepository processoRepository,
                            DocumentoProcessoRepository documentoRepository,
                            TipoDocumentoRepository tipoDocumentoRepository,
-                           UsuarioRhEmpresaRepository usuarioRhRepository) {
+                           UsuarioRhEmpresaRepository usuarioRhRepository,
+                           EnvioRepository envioRepository, EnvioRepository envioRepository1) {
         this.processoRepository = processoRepository;
         this.documentoRepository = documentoRepository;
         this.tipoDocumentoRepository = tipoDocumentoRepository;
         this.usuarioRhRepository = usuarioRhRepository;
+        this.envioRepository = envioRepository1;
     }
 
     @Transactional
@@ -90,15 +84,18 @@ public class ProcessoService {
 
     private ProcessoDetalheResponse montarDetalhe(Processo processo, List<DocumentoProcesso> documentos) {
         List<DocumentoResponse> itens = documentos.stream()
-                .map(d -> new DocumentoResponse(
-                        d.getId(),
-                        d.getTipoDocumento().getNome(),
-                        d.getDescricao(),
-                        d.getDirecao(),
-                        d.getStatus(),
-                        null,
-                        null,
-                        d.getAceitoEm()))
+                .map(d -> {
+                    Optional<Envio> ultimo = envioRepository.findFirstByDocumentoProcessoIdOrderByEnviadoEmDesc(d.getId());
+                    return new DocumentoResponse(
+                            d.getId(),
+                            d.getTipoDocumento().getNome(),
+                            d.getDescricao(),
+                            d.getDirecao(),
+                            d.getStatus(),
+                            ultimo.map(e -> e.getMotivoRecusa()).orElse(null),
+                            ultimo.map(e -> e.getId()).orElse(null),
+                            d.getAceitoEm());
+                })
                 .toList();
 
         int aprovados = (int) documentos.stream()
