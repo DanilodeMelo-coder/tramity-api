@@ -7,7 +7,7 @@ import br.com.TramityRH.TramityRH.model.Enums.StatusDocumento;
 import br.com.TramityRH.TramityRH.model.Enums.TipoProcesso;
 import br.com.TramityRH.TramityRH.repository.*;
 import br.com.TramityRH.TramityRH.security.UsuarioLogado;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -23,17 +23,20 @@ public class ProcessoService {
     private final TipoDocumentoRepository tipoDocumentoRepository;
     private final UsuarioRhEmpresaRepository usuarioRhRepository;
     private final EnvioRepository envioRepository;
+    private final ConviteRepository conviteRepository;
 
     public ProcessoService(ProcessoRepository processoRepository,
                            DocumentoProcessoRepository documentoRepository,
                            TipoDocumentoRepository tipoDocumentoRepository,
                            UsuarioRhEmpresaRepository usuarioRhRepository,
-                           EnvioRepository envioRepository, EnvioRepository envioRepository1) {
+                           EnvioRepository envioRepository1,
+                           ConviteRepository conviteRepository) {
         this.processoRepository = processoRepository;
         this.documentoRepository = documentoRepository;
         this.tipoDocumentoRepository = tipoDocumentoRepository;
         this.usuarioRhRepository = usuarioRhRepository;
         this.envioRepository = envioRepository1;
+        this.conviteRepository = conviteRepository;
     }
 
     @Transactional
@@ -118,6 +121,41 @@ public class ProcessoService {
 
         List<DocumentoProcesso> documentos = documentoRepository.listarComTipo(processo.getId());
         return montarDetalhe(processo, documentos);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProcessoResumoResponse> listar(String status, UsuarioLogado usuario) {
+        if (!usuario.isRh()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Apenas o RH pode listar processos");
+        }
+
+        return processoRepository.findByEmpresaIdOrderByDataCriacaoDesc(usuario.idEmpresa()).stream()
+                .filter(p -> status == null || status.equals(statusDe(p)))
+                .map(p -> montarResumo(p))
+                .toList();
+    }
+
+    private String statusDe(Processo processo) {
+        return (processo.getDataConclusao() == null) ? "EM_ANDAMENTO" : "CONCLUIDO";
+    }
+
+    private ProcessoResumoResponse montarResumo(Processo processo) {
+        List<DocumentoProcesso> documentos = documentoRepository.listarComTipo(processo.getId());
+
+        int aprovados = (int) documentos.stream()
+                .filter(d -> d.getStatus() == StatusDocumento.APROVADO || d.getStatus() == StatusDocumento.ACEITO)
+                .count();
+        int aguardando = (int) documentos.stream()
+                .filter(d -> d.getStatus() == StatusDocumento.EM_ANALISE)
+                .count();
+
+        String nomeColaborador = (processo.getColaborador() == null) ? null : processo.getColaborador().getNome();
+        String emailConvite = conviteRepository.findFirstByProcessoIdOrderByDataExpiracaoDesc(processo.getId())
+                .map(c -> c.getEmail())
+                .orElse(null);
+
+        return new ProcessoResumoResponse(processo.getId(), processo.getTipo(), nomeColaborador, emailConvite,
+                aprovados, documentos.size(), aguardando, processo.getDataCriacao(), processo.getDataConclusao());
     }
 
     @Transactional

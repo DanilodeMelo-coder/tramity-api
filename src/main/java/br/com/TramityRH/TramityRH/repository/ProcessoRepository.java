@@ -13,6 +13,7 @@ public interface ProcessoRepository extends JpaRepository <Processo, UUID> {
     List<Processo> findByEmpresaId (UUID empresaId); // ← lista do rh, processos da empresa dele
     Optional<Processo> findByIdAndEmpresaId (UUID id, UUID empresaId); // ← essa bosta garante que a busca seja de um processo da empresa do usuario logado
     Optional<Processo> findByIdAndColaboradorId (UUID id, UUID colaboradorId);
+    List<Processo> findByEmpresaIdOrderByDataCriacaoDesc(UUID idEmpresa);
 
     @Query("SELECT p FROM Processo p JOIN FETCH p.empresa WHERE p.colaborador.id = :colaboradorId ORDER BY p.dataCriacao DESC")
     List<Processo> listarPorColaborador (@Param("colaboradorId") UUID colaboradorId);
