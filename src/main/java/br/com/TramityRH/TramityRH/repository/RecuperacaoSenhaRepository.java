@@ -8,4 +8,6 @@ import java.util.UUID;
 
 public interface RecuperacaoSenhaRepository extends JpaRepository <RecuperacaoSenha, UUID> {
     Optional<RecuperacaoSenha> findByEmailAndCodigoOrderByDataCriacaoDesc (String email, String codigo); // ← validar os dois juntos por seguranca!!
+    Optional<RecuperacaoSenha> findFirstByEmailOrderByDataCriacaoDesc(String email);
 }
+

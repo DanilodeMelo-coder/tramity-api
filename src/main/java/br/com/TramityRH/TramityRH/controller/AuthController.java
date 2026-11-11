@@ -37,6 +37,17 @@ public class AuthController {
     public MensagemResponse recuperarSenha(@RequestBody @Valid RecuperarSenhaRequest dados) {
         return recuperacaoSenhaService.solicitar(dados);
     }
+
+    @PostMapping("/validar-codigo")
+    public ValidarCodigoResponse validarCodigo(@RequestBody @Valid ValidarCodigoRequest dados) {
+        return recuperacaoSenhaService.validarCodigo(dados);
+    }
+
+    @PostMapping("/nova-senha")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void novaSenha(@RequestBody @Valid NovaSenhaRequest dados) {
+        recuperacaoSenhaService.redefinirSenha(dados);
+    }
 }
 
 
