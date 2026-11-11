@@ -18,6 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import br.com.TramityRH.TramityRH.model.Enums.DirecaoDocumento;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -60,6 +61,10 @@ public class AvaliacaoService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Processo não encontrado"));
         DocumentoProcesso documento = documentoRepository.findByIdAndProcessoId(idDocumento, idProcesso)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Documento não encontrado"));
+
+        if (documento.getDirecao() != DirecaoDocumento.COLABORADOR_ENVIA) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Documento da empresa não é avaliado, é aceito pelo colaborador");
+        }
 
         if (documento.getStatus() != StatusDocumento.EM_ANALISE) { // RN10 aqui
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Só é possível avaliar documentos em análise");
