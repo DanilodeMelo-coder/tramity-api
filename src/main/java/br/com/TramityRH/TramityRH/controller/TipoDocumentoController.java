@@ -27,4 +27,6 @@ public class TipoDocumentoController {
         return service.listarTodosDocumentos();
     }
 
+    //teste
+
 }
