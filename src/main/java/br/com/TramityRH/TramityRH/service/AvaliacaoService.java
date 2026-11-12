@@ -31,17 +31,20 @@ public class AvaliacaoService {
     private final EnvioRepository envioRepository;
     private final UsuarioRhEmpresaRepository usuarioRhRepository;
     private final EventoService eventoService;
+    private final DocumentoMapper documentoMapper;
 
     public AvaliacaoService(ProcessoRepository processoRepository,
                             DocumentoProcessoRepository documentoRepository,
                             EnvioRepository envioRepository,
                             UsuarioRhEmpresaRepository usuarioRhRepository,
-                            EventoService eventoService) {
+                            EventoService eventoService,
+                            DocumentoMapper documentoMapper) {
         this.processoRepository = processoRepository;
         this.documentoRepository = documentoRepository;
         this.envioRepository = envioRepository;
         this.usuarioRhRepository = usuarioRhRepository;
         this.eventoService = eventoService;
+        this.documentoMapper = documentoMapper;
     }
 
     @Transactional
@@ -87,14 +90,6 @@ public class AvaliacaoService {
         eventoService.registrar(processo, rh.getEmail(),
                 recusa ? AcaoEvento.DOCUMENTO_RECUSADO : AcaoEvento.DOCUMENTO_APROVADO);
 
-        return new DocumentoResponse(
-                documento.getId(),
-                documento.getTipoDocumento().getNome(),
-                documento.getDescricao(),
-                documento.getDirecao(),
-                documento.getStatus(),
-                null,
-                null,
-                documento.getAceitoEm());
+        return documentoMapper.montar(documento);
     }
 }

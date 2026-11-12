@@ -34,6 +34,7 @@ public class DemissaoService {
     private final ColaboradorRepository colaboradorRepository;
     private final ArmazenamentoService armazenamentoService;
     private final EventoService eventoService;
+    private final DocumentoMapper documentoMapper;
 
     public DemissaoService(
             ProcessoRepository processoRepository,
@@ -42,7 +43,8 @@ public class DemissaoService {
             UsuarioRhEmpresaRepository usuarioRhEmpresaRepository,
             ColaboradorRepository colaboradorRepository,
             ArmazenamentoService armazenamentoService,
-            EventoService eventoService) {
+            EventoService eventoService,
+            DocumentoMapper documentoMapper) {
         this.processoRepository = processoRepository;
         this.documentoProcessoRepository = documentoProcessoRepository;
         this.envioRepository = envioRepository;
@@ -50,6 +52,7 @@ public class DemissaoService {
         this.colaboradorRepository = colaboradorRepository;
         this.armazenamentoService = armazenamentoService;
         this.eventoService = eventoService;
+        this.documentoMapper = documentoMapper;
     }
     // RF14 aqui
     @Transactional
@@ -93,7 +96,7 @@ public class DemissaoService {
         documentoProcessoRepository.save(documento);
 
         eventoService.registrar(processo, rh.getEmail(), AcaoEvento.DOCUMENTO_ENVIADO);
-        return resposta(documento);
+        return documentoMapper.montar(documento);
     }
 
     // RF15 e RN17: o colaborador aceita, e o aceite não pode ser desfeito
@@ -132,11 +135,8 @@ public class DemissaoService {
         documentoProcessoRepository.save(documento);
 
         eventoService.registrar(processo, colaborador.getEmail(), AcaoEvento.DOCUMENTO_ACEITO);
-        return resposta(documento);
+        return documentoMapper.montar(documento);
     }
 
-    private DocumentoResponse resposta(DocumentoProcesso d) {
-        return new DocumentoResponse(d.getId(), d.getTipoDocumento().getNome(), d.getDescricao(),
-                d.getDirecao(), d.getStatus(), null, null, d.getAceitoEm());
+
     }
-}
