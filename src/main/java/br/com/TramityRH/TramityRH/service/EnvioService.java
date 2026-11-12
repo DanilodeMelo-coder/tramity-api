@@ -4,6 +4,7 @@ import br.com.TramityRH.TramityRH.dto.EnvioResponse;
 import br.com.TramityRH.TramityRH.model.DocumentoProcesso;
 import br.com.TramityRH.TramityRH.model.Enums.DirecaoDocumento;
 import br.com.TramityRH.TramityRH.model.Enums.StatusDocumento;
+import br.com.TramityRH.TramityRH.model.Enums.AcaoEvento;
 import br.com.TramityRH.TramityRH.model.Envio;
 import br.com.TramityRH.TramityRH.model.Processo;
 import br.com.TramityRH.TramityRH.repository.DocumentoProcessoRepository;
@@ -25,13 +26,16 @@ public class EnvioService {
     private final DocumentoProcessoRepository documentoRepository;
     private final EnvioRepository envioRepository;
     private final ArmazenamentoService armazenamentoService;
+    private final EventoService eventoService;
 
     public EnvioService(DocumentoProcessoRepository documentoRepository,
                         EnvioRepository envioRepository,
-                        ArmazenamentoService armazenamentoService) {
+                        ArmazenamentoService armazenamentoService,
+                        EventoService eventoService) {
         this.documentoRepository = documentoRepository;
         this.envioRepository = envioRepository;
         this.armazenamentoService = armazenamentoService;
+        this.eventoService = eventoService;
     }
 
     @Transactional
@@ -75,7 +79,7 @@ public class EnvioService {
         documento.setStatus(StatusDocumento.EM_ANALISE);
         documentoRepository.save(documento);
 
-        // AUDITORIA: DOCUMENTO_ENVIADO
+        eventoService.registrar(processo, processo.getColaborador().getEmail(), AcaoEvento.DOCUMENTO_ENVIADO); // auditoria
 
         return new EnvioResponse(envio.getId(), documento.getStatus());
     }

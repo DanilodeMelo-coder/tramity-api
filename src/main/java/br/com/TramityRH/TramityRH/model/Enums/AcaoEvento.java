@@ -5,6 +5,7 @@ public enum AcaoEvento {
     DOCUMENTO_APROVADO("Documento aprovado"),
     DOCUMENTO_RECUSADO("Documento recusado"),
     PROCESSO_CONCLUIDO("Processo concluido"),
+    PROCESSO_CONCLUIDO_COM_PENDENCIAS("Processo concluido com pendências"),
     DOCUMENTO_ACEITO("Documento aceito");
 
     private final String descricao;

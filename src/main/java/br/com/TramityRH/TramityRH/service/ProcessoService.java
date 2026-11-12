@@ -2,6 +2,7 @@ package br.com.TramityRH.TramityRH.service;
 
 import br.com.TramityRH.TramityRH.dto.*;
 import br.com.TramityRH.TramityRH.model.*;
+import br.com.TramityRH.TramityRH.model.Enums.AcaoEvento;
 import br.com.TramityRH.TramityRH.model.Enums.DirecaoDocumento;
 import br.com.TramityRH.TramityRH.model.Enums.StatusDocumento;
 import br.com.TramityRH.TramityRH.model.Enums.TipoProcesso;
@@ -24,19 +25,25 @@ public class ProcessoService {
     private final UsuarioRhEmpresaRepository usuarioRhRepository;
     private final EnvioRepository envioRepository;
     private final ConviteRepository conviteRepository;
+    private final EventoService eventoService;
+    private final DocumentoMapper documentoMapper;
 
     public ProcessoService(ProcessoRepository processoRepository,
                            DocumentoProcessoRepository documentoRepository,
                            TipoDocumentoRepository tipoDocumentoRepository,
                            UsuarioRhEmpresaRepository usuarioRhRepository,
                            EnvioRepository envioRepository1,
-                           ConviteRepository conviteRepository) {
+                           ConviteRepository conviteRepository,
+                           EventoService eventoService,
+                           DocumentoMapper documentoMapper) {
         this.processoRepository = processoRepository;
         this.documentoRepository = documentoRepository;
         this.tipoDocumentoRepository = tipoDocumentoRepository;
         this.usuarioRhRepository = usuarioRhRepository;
         this.envioRepository = envioRepository1;
         this.conviteRepository = conviteRepository;
+        this.eventoService = eventoService;
+        this.documentoMapper = documentoMapper;
     }
 
     @Transactional
@@ -87,20 +94,7 @@ public class ProcessoService {
     }
 
     private ProcessoDetalheResponse montarDetalhe(Processo processo, List<DocumentoProcesso> documentos) {
-        List<DocumentoResponse> itens = documentos.stream()
-                .map(d -> {
-                    Optional<Envio> ultimo = envioRepository.findFirstByDocumentoProcessoIdOrderByEnviadoEmDesc(d.getId());
-                    return new DocumentoResponse(
-                            d.getId(),
-                            d.getTipoDocumento().getNome(),
-                            d.getDescricao(),
-                            d.getDirecao(),
-                            d.getStatus(),
-                            ultimo.map(e -> e.getMotivoRecusa()).orElse(null),
-                            ultimo.map(e -> e.getId()).orElse(null),
-                            d.getAceitoEm());
-                })
-                .toList();
+        List<DocumentoResponse> itens = documentoMapper.montar(documentos);
 
         int aprovados = (int) documentos.stream()
                 .filter(d -> d.getStatus() == StatusDocumento.APROVADO || d.getStatus() == StatusDocumento.ACEITO)
@@ -192,7 +186,13 @@ public class ProcessoService {
         processo.setDataConclusao(LocalDateTime.now());
         processoRepository.save(processo);
 
-        // AUDITORIA: PROCESSO_CONCLUIDO (se houver pendências, registrar quais no detalhe, pela RN15)
+        UsuarioRhEmpresa rh = usuarioRhRepository.findById(usuario.id())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuário não encontrado"));
+
+        AcaoEvento acao = pendentes.isEmpty()
+                ? AcaoEvento.PROCESSO_CONCLUIDO
+                : AcaoEvento.PROCESSO_CONCLUIDO_COM_PENDENCIAS;
+        eventoService.registrar(processo, rh.getEmail(), acao);
 
         return montarDetalhe(processo, documentos);
     }
