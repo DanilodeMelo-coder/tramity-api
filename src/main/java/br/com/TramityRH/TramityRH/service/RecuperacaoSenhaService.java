@@ -11,8 +11,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.security.SecureRandom;
@@ -23,22 +21,24 @@ import java.util.Optional;
 @Service
 public class RecuperacaoSenhaService {
 
-    private static final Logger log = LoggerFactory.getLogger(RecuperacaoSenhaService.class);
     private static final SecureRandom GERADOR = new SecureRandom();
 
     private final RecuperacaoSenhaRepository recuperacaoRepository;
     private final ColaboradorRepository colaboradorRepository;
     private final UsuarioRhEmpresaRepository usuarioRhRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
     public RecuperacaoSenhaService(RecuperacaoSenhaRepository recuperacaoRepository,
                                    ColaboradorRepository colaboradorRepository,
                                    UsuarioRhEmpresaRepository usuarioRhRepository,
-                                   PasswordEncoder passwordEncoder) {
+                                   PasswordEncoder passwordEncoder,
+                                   EmailService emailService) {
         this.recuperacaoRepository = recuperacaoRepository;
         this.colaboradorRepository = colaboradorRepository;
         this.usuarioRhRepository = usuarioRhRepository;
         this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
     }
 
     @Transactional
@@ -54,9 +54,7 @@ public class RecuperacaoSenhaService {
             recuperacao.setCodigo(String.format("%06d", GERADOR.nextInt(1_000_000)));
             recuperacao.setDataExpiracao(LocalDateTime.now().plusMinutes(15));
             recuperacaoRepository.save(recuperacao);
-
-            // Sem envio de e-mail real nesta versão: o código aparece no log da API
-            log.info("Código de recuperação de senha para {}: {}", email, recuperacao.getCodigo());
+            emailService.enviarCodigoRecuperacao(email, recuperacao.getCodigo());
         }
 
         return new MensagemResponse("Se o e-mail estiver cadastrado, você receberá um código de recuperação.");

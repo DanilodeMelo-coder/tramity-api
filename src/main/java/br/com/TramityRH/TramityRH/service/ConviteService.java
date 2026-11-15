@@ -28,14 +28,16 @@ public class ConviteService {
     private final ConviteRepository conviteRepository;
     private final ProcessoRepository processoRepository;
     private final ColaboradorRepository colaboradorRepository;
-
+    private final EmailService emailService;
 
     public ConviteService(ConviteRepository conviteRepository,
                           ProcessoRepository processoRepository,
-                          ColaboradorRepository colaboradorRepository, ColaboradorRepository colaboradorRepository1) {
+                          ColaboradorRepository colaboradorRepository,
+                          EmailService emailService) {
         this.conviteRepository = conviteRepository;
         this.processoRepository = processoRepository;
-        this.colaboradorRepository = colaboradorRepository1;
+        this.colaboradorRepository = colaboradorRepository;
+        this.emailService = emailService;
     }
 
     @Transactional
@@ -58,6 +60,7 @@ public class ConviteService {
         convite.setCodigo(gerarCodigoUnico());
         convite.setDataExpiracao(LocalDateTime.now().plusDays(7));
         conviteRepository.save(convite);
+        emailService.enviarCodigoConvite(convite.getEmail(), convite.getCodigo(), convite.getDataExpiracao());
 
         // AUDITORIA: CONVITE_GERADO
 
