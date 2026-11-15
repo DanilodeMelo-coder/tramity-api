@@ -17,6 +17,7 @@ public interface EnvioRepository extends JpaRepository <Envio, UUID> {
     Optional<Envio> findByIdAndDocumentoProcessoProcessoEmpresaId(UUID id, UUID idEmpresa);
     Optional<Envio> findByIdAndDocumentoProcessoProcessoColaboradorId(UUID id, UUID idColaborador);
 
-    @Query("SELECT e FROM Envio e WHERE e.documentoProcesso.id IN :ids ORDER BY e.enviadoEm DESC")
+    @Query("SELECT e FROM Envio e LEFT JOIN FETCH e.avaliadoPor " +
+            "WHERE e.documentoProcesso.id IN :ids ORDER BY e.enviadoEm DESC")
     List<Envio> listarPorDocumentos(@Param("ids") Collection<UUID> ids);
 }

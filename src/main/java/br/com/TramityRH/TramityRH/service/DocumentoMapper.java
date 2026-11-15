@@ -7,6 +7,7 @@ import br.com.TramityRH.TramityRH.model.Envio;
 import br.com.TramityRH.TramityRH.repository.EnvioRepository;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,14 +22,13 @@ public class DocumentoMapper {
         this.envioRepository = envioRepository;
     }
 
-    public List<DocumentoResponse> montar(List<DocumentoProcesso> documentos) {
+    public List<DocumentoResponse> montar(List<DocumentoProcesso> documentos, boolean exibirAvaliador) {
         if (documentos.isEmpty()) {
             return List.of();
         }
 
         List<UUID> ids = documentos.stream().map(DocumentoProcesso::getId).toList();
 
-        // a lista vem do envio mais recente para o mais antigo: o primeiro de cada documento é o último
         Map<UUID, Envio> ultimos = new HashMap<>();
         for (Envio e : envioRepository.listarPorDocumentos(ids)) {
             ultimos.putIfAbsent(e.getDocumentoProcesso().getId(), e);
@@ -39,12 +39,21 @@ public class DocumentoMapper {
             UUID idUltimoEnvio = ultimo != null ? ultimo.getId() : null;
             String motivo = (ultimo != null && d.getStatus() == StatusDocumento.RECUSADO)
                     ? ultimo.getMotivoRecusa() : null;
+
+            String avaliadoPor = null;
+            LocalDateTime dataAvaliacao = null;
+            if (exibirAvaliador && ultimo != null && ultimo.getAvaliadoPor() != null) {
+                avaliadoPor = ultimo.getAvaliadoPor().getNome();
+                dataAvaliacao = ultimo.getDataAvaliacao();
+            }
+
             return new DocumentoResponse(d.getId(), d.getTipoDocumento().getNome(), d.getDescricao(),
-                    d.getDirecao(), d.getStatus(), motivo, idUltimoEnvio, d.getAceitoEm());
+                    d.getDirecao(), d.getStatus(), motivo, idUltimoEnvio, d.getAceitoEm(),
+                    avaliadoPor, dataAvaliacao);
         }).toList();
     }
 
-    public DocumentoResponse montar(DocumentoProcesso documento) {
-        return montar(List.of(documento)).get(0);
+    public DocumentoResponse montar(DocumentoProcesso documento, boolean exibirAvaliador) {
+        return montar(List.of(documento), exibirAvaliador).get(0);
     }
 }

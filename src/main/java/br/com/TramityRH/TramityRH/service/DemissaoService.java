@@ -96,7 +96,7 @@ public class DemissaoService {
         documentoProcessoRepository.save(documento);
 
         eventoService.registrar(processo, rh.getEmail(), AcaoEvento.DOCUMENTO_ENVIADO);
-        return documentoMapper.montar(documento);
+        return documentoMapper.montar(documento, true);
     }
 
     // RF15 e RN17: o colaborador aceita, e o aceite não pode ser desfeito
@@ -135,7 +135,7 @@ public class DemissaoService {
         documentoProcessoRepository.save(documento);
 
         eventoService.registrar(processo, colaborador.getEmail(), AcaoEvento.DOCUMENTO_ACEITO);
-        return documentoMapper.montar(documento);
+        return documentoMapper.montar(documento, false);
     }
 
 
