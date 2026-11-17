@@ -90,11 +90,11 @@ public class ProcessoService {
         // AUDITORIA: PROCESSO_CRIADO
 
         // 6. A resposta
-        return montarDetalhe(processo, documentos);
+        return montarDetalhe(processo, documentos, true);
     }
 
-    private ProcessoDetalheResponse montarDetalhe(Processo processo, List<DocumentoProcesso> documentos) {
-        List<DocumentoResponse> itens = documentoMapper.montar(documentos);
+    private ProcessoDetalheResponse montarDetalhe(Processo processo, List<DocumentoProcesso> documentos, boolean ehRh) {
+        List<DocumentoResponse> itens = documentoMapper.montar(documentos, ehRh);
 
         int aprovados = (int) documentos.stream()
                 .filter(d -> d.getStatus() == StatusDocumento.APROVADO || d.getStatus() == StatusDocumento.ACEITO)
@@ -114,7 +114,7 @@ public class ProcessoService {
         : processoRepository.findByIdAndColaboradorId(id, usuario.id())).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Processo não encontrado"));
 
         List<DocumentoProcesso> documentos = documentoRepository.listarComTipo(processo.getId());
-        return montarDetalhe(processo, documentos);
+        return montarDetalhe(processo, documentos, usuario.isRh());
     }
 
     @Transactional(readOnly = true)
@@ -194,7 +194,7 @@ public class ProcessoService {
                 : AcaoEvento.PROCESSO_CONCLUIDO_COM_PENDENCIAS;
         eventoService.registrar(processo, rh.getEmail(), acao);
 
-        return montarDetalhe(processo, documentos);
+        return montarDetalhe(processo, documentos, true);
     }
 
     @Transactional

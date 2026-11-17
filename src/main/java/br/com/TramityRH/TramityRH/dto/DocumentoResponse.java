@@ -14,6 +14,8 @@ public record DocumentoResponse(
         StatusDocumento status,
         String motivoRecusa,
         UUID idUltimoEnvio,
-        LocalDateTime aceitoEm
+        LocalDateTime aceitoEm,
+        String avaliadoPor,
+        LocalDateTime dataAvaliacao
 ) {
 }

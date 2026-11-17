@@ -90,6 +90,6 @@ public class AvaliacaoService {
         eventoService.registrar(processo, rh.getEmail(),
                 recusa ? AcaoEvento.DOCUMENTO_RECUSADO : AcaoEvento.DOCUMENTO_APROVADO);
 
-        return documentoMapper.montar(documento);
+        return documentoMapper.montar(documento, true);
     }
 }
