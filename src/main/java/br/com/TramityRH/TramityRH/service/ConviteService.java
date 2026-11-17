@@ -28,14 +28,17 @@ public class ConviteService {
     private final ConviteRepository conviteRepository;
     private final ProcessoRepository processoRepository;
     private final ColaboradorRepository colaboradorRepository;
+    private final EmailService emailService;
 
 
     public ConviteService(ConviteRepository conviteRepository,
                           ProcessoRepository processoRepository,
-                          ColaboradorRepository colaboradorRepository, ColaboradorRepository colaboradorRepository1) {
+                          ColaboradorRepository colaboradorRepository,
+                          EmailService emailService) {
         this.conviteRepository = conviteRepository;
         this.processoRepository = processoRepository;
-        this.colaboradorRepository = colaboradorRepository1;
+        this.colaboradorRepository = colaboradorRepository;
+        this.emailService = emailService;
     }
 
     @Transactional
@@ -61,7 +64,17 @@ public class ConviteService {
 
         // AUDITORIA: CONVITE_GERADO
 
-        return new ConviteResponse(convite.getCodigo(), convite.getDataExpiracao());
+        boolean emailEnviado = emailService.enviar(
+                convite.getEmail(),
+                "Seu convite para o Tramity",
+                "<p>Olá!</p>"
+                        + "<p>Você foi convidado para um processo no <strong>Tramity</strong>.</p>"
+                        + "<p>Crie sua conta no app e informe o código:</p>"
+                        + "<h2>" + convite.getCodigo() + "</h2>"
+                        + "<p>O código vale por 7 dias e só pode ser usado uma vez.</p>"
+        );
+
+        return new ConviteResponse(convite.getCodigo(), convite.getDataExpiracao(), emailEnviado);
     }
 
     @Transactional

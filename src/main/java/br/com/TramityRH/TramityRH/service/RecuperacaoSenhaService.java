@@ -30,15 +30,19 @@ public class RecuperacaoSenhaService {
     private final ColaboradorRepository colaboradorRepository;
     private final UsuarioRhEmpresaRepository usuarioRhRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
+
 
     public RecuperacaoSenhaService(RecuperacaoSenhaRepository recuperacaoRepository,
                                    ColaboradorRepository colaboradorRepository,
                                    UsuarioRhEmpresaRepository usuarioRhRepository,
-                                   PasswordEncoder passwordEncoder) {
+                                   PasswordEncoder passwordEncoder,
+                                   EmailService emailService) {
         this.recuperacaoRepository = recuperacaoRepository;
         this.colaboradorRepository = colaboradorRepository;
         this.usuarioRhRepository = usuarioRhRepository;
         this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
     }
 
     @Transactional
@@ -55,8 +59,15 @@ public class RecuperacaoSenhaService {
             recuperacao.setDataExpiracao(LocalDateTime.now().plusMinutes(15));
             recuperacaoRepository.save(recuperacao);
 
-            // Sem envio de e-mail real nesta versão: o código aparece no log da API
-            log.info("Código de recuperação de senha para {}: {}", email, recuperacao.getCodigo());
+            emailService.enviar(
+                    email,
+                    "Código de recuperação de senha - Tramity",
+                    "<p>Recebemos um pedido para redefinir sua senha no <strong>Tramity</strong>.</p>"
+                            + "<p>Seu código é:</p>"
+                            + "<h2>" + recuperacao.getCodigo() + "</h2>"
+                            + "<p>Ele vale por 15 minutos e só pode ser usado uma vez.</p>"
+                            + "<p>Se você não fez esse pedido, ignore este e-mail.</p>"
+            );
         }
 
         return new MensagemResponse("Se o e-mail estiver cadastrado, você receberá um código de recuperação.");
